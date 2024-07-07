@@ -13,20 +13,18 @@
     <video id="videoPlayer" width="600" controls autoplay></video>
 
     <script>
+        const videoPlayer = document.getElementById('videoPlayer');
         const ws = new WebSocket('ws://localhost:8765');
 
         ws.onopen = function() {
-            // Request the list of available videos when the connection is opened
             ws.send(JSON.stringify({ type: 'get_videos' }));
         };
 
-        ws.onmessage = function(event) {
+        ws.onmessage = async function(event) {
             if (typeof event.data === 'string') {
-                // Handle JSON messages
                 try {
                     const data = JSON.parse(event.data);
                     if (data.type === 'video_list') {
-                        // Populate the select dropdown with the list of available videos
                         const videoSelect = document.getElementById('videos');
                         data.videos.forEach(video => {
                             const option = document.createElement('option');
@@ -39,24 +37,23 @@
                     console.error('Error parsing JSON:', error);
                 }
             } else if (event.data instanceof ArrayBuffer) {
-                // Handle binary data (video stream)
-                const base64String = btoa(new Uint8Array(event.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
-                // videoPlayer.src = URL.createObjectURL(event.data);
+                const base64String = btoa(new Uint8Array(event.data).reduce((data, byte) => data + String.fromCharCode(byte), ''));
                 videoPlayer.src = 'data:video/mp4;base64,' + base64String;
                 if (videoPlayer.paused) {
-                        try {
-                            await videoPlayer.play();
-                        } catch (error) {
-                            console.error('Auto-play failed:', error);
-                        }
+                    try {
+                        await videoPlayer.play();
+                    } catch (error) {
+                        console.error('Auto-play failed:', error);
                     }
+                }
             }
         };
 
         function startStreaming() {
-            const videoSelect = document.getElementById('videos');
-            const videoName = videoSelect.value;
-            ws.send(JSON.stringify({ type: 'start_stream', video_name: videoName }));
+        const videoSelect = document.getElementById('videos');
+        const videoName = videoSelect.value;
+        console.log('Sending start_stream request for:', videoName);
+        ws.send(JSON.stringify({ type: 'start_stream', video_name: videoName }));
         }
     </script>
 </body>

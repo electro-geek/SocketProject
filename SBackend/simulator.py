@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import websockets
 import cv2
 import json
@@ -17,12 +18,12 @@ async def stream_video(websocket, video_path):
         if not ret:
             break
         _, buffer = cv2.imencode('.jpg', frame)
-        frame_data = buffer.tobytes()
+        frame_data = base64.b64encode(buffer).decode('utf-8')
         await websocket.send(frame_data)
     cap.release()
 
 async def main():
-    async with websockets.serve(handler, "localhost", 8766):
+    async with websockets.serve(handler, "localhost", 8766, ping_interval=None, ping_timeout=None):
         await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
